@@ -160,7 +160,7 @@ typedef struct {
     #define Z_POST_CLEARANCE hmiData.zAfterHoming
   #endif
   #if ALL(LED_CONTROL_MENU, HAS_COLOR_LEDS)
-    LEDColor ledColor = defColorLeds;
+    LED1Color_t ledColor = defColorLeds;
   #endif
   #if HAS_GCODE_PREVIEW
     bool enablePreview = true;
@@ -371,6 +371,9 @@ void drawMaxAccelMenu();
 #endif
 #if ENABLED(INDIVIDUAL_AXIS_HOMING_SUBMENU)
   void drawHomingMenu();
+#endif
+#if ENABLED(EDITABLE_HOMING_FEEDRATE)
+  void drawHomingFRMenu();
 #endif
 #if ENABLED(FWRETRACT)
   void drawFWRetractMenu();

@@ -755,7 +755,7 @@ void MarlinUI::draw_status_message(const bool blink) {
 
     // Draw the progress bar if the message has shown long enough
     // or if there is no message set.
-    if (ELAPSED(millis(), progress_bar_ms + PROGRESS_BAR_MSG_TIME) || !has_status()) {
+    if (ELAPSED(millis(), progress_bar_ms, PROGRESS_BAR_MSG_TIME) || !has_status()) {
       const uint8_t progress = get_progress_percent();
       if (progress > 2) return draw_progress_bar(progress);
     }
@@ -833,8 +833,6 @@ void MarlinUI::draw_status_message(const bool blink) {
 #if HAS_PRINT_PROGRESS
 
   #define TPOFFSET (LCD_WIDTH - 1)
-  static uint8_t timepos = TPOFFSET - 6;
-  static char buffer[8];
 
   #if ENABLED(SHOW_PROGRESS_PERCENT)
     static lcd_uint_t pc = 0, pr = 2;
@@ -843,7 +841,7 @@ void MarlinUI::draw_status_message(const bool blink) {
       const uint8_t progress = get_progress_percent();
       if (progress) {
         lcd_moveto(pc, pr);
-        lcd_put_u8str(F(TERN(IS_SD_PRINTING, "SD", "P:")));
+        lcd_put_u8str(card.isStillPrinting() ? F("SD") : F("P:"));
         lcd_put_u8str(TERN(PRINT_PROGRESS_SHOW_DECIMALS, permyriadtostr4(get_progress_permyriad()), ui8tostr3rj(progress)));
         lcd_put_u8str(F("%"));
       }
@@ -853,10 +851,20 @@ void MarlinUI::draw_status_message(const bool blink) {
   #if ENABLED(SHOW_REMAINING_TIME)
     void MarlinUI::drawRemain() {
       if (printJobOngoing()) {
+        char buffer[8];
         const duration_t remaint = get_remaining_time();
-        timepos = TPOFFSET - remaint.toDigital(buffer);
-        IF_DISABLED(LCD_INFO_SCREEN_STYLE, lcd_put_lchar(timepos - 1, 2, 0x20));
-        lcd_put_lchar(TERN(LCD_INFO_SCREEN_STYLE, 11, timepos), 2, 'R');
+        #if LCD_INFO_SCREEN_STYLE == 0
+          const uint8_t timepos = TPOFFSET - remaint.toDigital(buffer);
+          lcd_put_lchar(timepos - 1, 2, ' ');
+        #endif
+        lcd_put_lchar(
+          #if LCD_INFO_SCREEN_STYLE == 0
+            timepos
+          #else
+            11
+          #endif
+          , 2, 'R'
+        );
         lcd_put_u8str(buffer);
       }
     }
@@ -866,9 +874,19 @@ void MarlinUI::draw_status_message(const bool blink) {
     void MarlinUI::drawInter() {
       const duration_t interactt = interaction_time;
       if (printingIsActive() && interactt.value) {
-        timepos = TPOFFSET - interactt.toDigital(buffer);
-        IF_DISABLED(LCD_INFO_SCREEN_STYLE, lcd_put_lchar(timepos - 1, 2, 0x20));
-        lcd_put_lchar(TERN(LCD_INFO_SCREEN_STYLE, 11, timepos), 2, 'C');
+        char buffer[8];
+        #if LCD_INFO_SCREEN_STYLE == 0
+          const uint8_t timepos = TPOFFSET - interactt.toDigital(buffer);
+          lcd_put_lchar(timepos - 1, 2, ' ');
+        #endif
+        lcd_put_lchar(
+          #if LCD_INFO_SCREEN_STYLE == 0
+            timepos
+          #else
+            11
+          #endif
+          , 2, 'C'
+        );
         lcd_put_u8str(buffer);
       }
     }
@@ -877,10 +895,20 @@ void MarlinUI::draw_status_message(const bool blink) {
   #if ENABLED(SHOW_ELAPSED_TIME)
     void MarlinUI::drawElapsed() {
       if (printJobOngoing()) {
+        char buffer[8];
         const duration_t elapsedt = print_job_timer.duration();
-        timepos = TPOFFSET - elapsedt.toDigital(buffer);
-        IF_DISABLED(LCD_INFO_SCREEN_STYLE, lcd_put_lchar(timepos - 1, 2, 0x20));
-        lcd_put_lchar(TERN(LCD_INFO_SCREEN_STYLE, 11, timepos), 2, 'E');
+        #if LCD_INFO_SCREEN_STYLE == 0
+          const uint8_t timepos = TPOFFSET - elapsedt.toDigital(buffer);
+          lcd_put_lchar(timepos - 1, 2, ' ');
+        #endif
+        lcd_put_lchar(
+          #if LCD_INFO_SCREEN_STYLE == 0
+            timepos
+          #else
+            11
+          #endif
+          , 2, 'E'
+        );
         lcd_put_u8str(buffer);
       }
     }
@@ -1000,7 +1028,7 @@ void MarlinUI::draw_status_screen() {
       #if LCD_WIDTH < 20
 
         #if HAS_PRINT_PROGRESS
-          TERN_(SHOW_PROGRESS_PERCENT, setPercentPos(0, 2));
+          TERN_(SHOW_PROGRESS_PERCENT, setPercentPos(0, 1));
           rotate_progress();
         #endif
 

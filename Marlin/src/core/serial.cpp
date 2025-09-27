@@ -27,6 +27,8 @@
   #include "../feature/ethernet.h"
 #endif
 
+#include <stdlib.h> // dtostrf
+
 // Echo commands to the terminal by default in dev mode
 uint8_t marlin_debug_flags = TERN(MARLIN_DEV_MODE, MARLIN_DEBUG_ECHO, MARLIN_DEBUG_NONE);
 
@@ -75,8 +77,8 @@ template <> void SERIAL_ECHO(const p_float_t pf) { SERIAL_IMPL.print(pf.value, p
 template <> void SERIAL_ECHO(const w_float_t wf) { char f1[20]; SERIAL_IMPL.print(dtostrf(wf.value, wf.width, wf.prec, f1)); }
 
 // Specializations for F-string
-template <> void SERIAL_ECHO(const FSTR_P fstr)   { SERIAL_ECHO_P(FTOP(fstr)); }
-template <> void SERIAL_ECHOLN(const FSTR_P fstr) { SERIAL_ECHOLN_P(FTOP(fstr)); }
+template <> void SERIAL_ECHO(FSTR_P const fstr)   { SERIAL_ECHO_P(FTOP(fstr)); }
+template <> void SERIAL_ECHOLN(FSTR_P const fstr) { SERIAL_ECHOLN_P(FTOP(fstr)); }
 
 void SERIAL_CHAR(char a) { SERIAL_IMPL.write(a); }
 void SERIAL_EOL() { SERIAL_CHAR('\n'); }
@@ -112,10 +114,6 @@ void serial_ternary(FSTR_P const pre, const bool onoff, FSTR_P const on, FSTR_P 
   if (post)          SERIAL_ECHO(post);
 }
 
-void serialprint_onoff(const bool onoff) { SERIAL_ECHO(onoff ? F(STR_ON) : F(STR_OFF)); }
-void serialprintln_onoff(const bool onoff) { serialprint_onoff(onoff); SERIAL_EOL(); }
-void serialprint_truefalse(const bool tf) { SERIAL_ECHO(tf ? F("true") : F("false")); }
-
 void print_bin(uint16_t val) {
   for (uint8_t i = 16; i--;) {
     SERIAL_CHAR('0' + TEST(val, i));
@@ -126,9 +124,11 @@ void print_bin(uint16_t val) {
 void _print_xyz(NUM_AXIS_ARGS_(const_float_t) FSTR_P const prefix) {
   if (prefix) SERIAL_ECHO(prefix);
   #if NUM_AXES
-    SERIAL_ECHOPGM_P(
-      LIST_N(DOUBLE(NUM_AXES), SP_X_STR, x, SP_Y_STR, y, SP_Z_STR, z, SP_I_STR, i, SP_J_STR, j, SP_K_STR, k, SP_U_STR, u, SP_V_STR, v, SP_W_STR, w)
-    );
+    SERIAL_ECHOPGM_P(NUM_AXIS_PAIRED_LIST(
+      SP_X_STR, x, SP_Y_STR, y, SP_Z_STR, z,
+      SP_I_STR, i, SP_J_STR, j, SP_K_STR, k,
+      SP_U_STR, u, SP_V_STR, v, SP_W_STR, w
+    ));
   #endif
 }
 
